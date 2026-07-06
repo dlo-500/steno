@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Steno Bench — Dictation & Transcript Exam</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- ============================================================
+     EDIT THIS BLOCK TO ADD YOUR OWN DICTATIONS
+     - audioSrc: a relative path to an mp3 in your repo (e.g. "audio/trial1.mp3")
+       or a direct link ending in .mp3 — NOT a Google Drive share link.
+     - masterText: the exact passage the audio reads aloud.
+     ============================================================ -->
+<script>
+  const DICTATIONS = [
+    {
+      id: "STENO0001",
+      title: "Budget Address — Trial",
+      wpm: 100,
+      audioSrc: "audio/trial1.mp3",
+      masterText: "Mr. Chairman Sir, we are glad that we have a good budget this year. But I want to say a few words about taxation and industry. So far as taxation is concerned, the government has tried to keep the burden light on the common man while ensuring that industry continues to grow at a steady pace."
+    },
+    {
+      id: "STENO0002",
+      title: "Parliamentary Reply — 80 WPM",
+      wpm: 80,
+      audioSrc: "audio/trial2.mp3",
+      masterText: "Replace this with your own eighty word per minute passage. The text you type here must match the audio file exactly, word for word, so the scoring engine can compare them correctly."
+    }
+  ];
+</script>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Certification Practice</p>
+    <h1>Steno Bench</h1>
+    <p class="tagline">Dictation, timed transcript, and instant scoring — one exam at a time.</p>
+  </header>
+
+  <main class="ticket" id="ticket">
+
+    <!-- STEP 1 — REGISTER -->
+    <section class="stub" id="stepRegister">
+      <div class="stub-head">
+        <span class="stub-no">01</span>
+        <h2>Register</h2>
+      </div>
+      <p class="stub-note">Enter your details, then choose the passage and speed you want to practice.</p>
+
+      <div class="field-row">
+        <label class="field">
+          <span>Full name</span>
+          <input type="text" id="candName" placeholder="Your name" autocomplete="name">
+        </label>
+        <label class="field">
+          <span>Email address</span>
+          <input type="email" id="candEmail" placeholder="you@example.com" autocomplete="email">
+        </label>
+      </div>
+
+      <label class="field">
+        <span>Dictation passage</span>
+        <select id="dictationSelect">
+          <option value="">— choose a passage —</option>
+        </select>
+      </label>
+
+      <button class="btn btn-primary" id="btnToListen" disabled>Enter Dictation Room →</button>
+    </section>
+
+    <div class="perforation" aria-hidden="true"></div>
+
+    <!-- STEP 2 — DICTATION -->
+    <section class="stub hidden" id="stepListen">
+      <div class="stub-head">
+        <span class="stub-no">02</span>
+        <h2>Dictation</h2>
+      </div>
+      <p class="stub-note">Play the audio once and take your shorthand notes. Only continue once it has played through.</p>
+
+      <div class="listen-card">
+        <p class="listen-title" id="listenTitle">—</p>
+        <p class="listen-wpm"><span id="listenWpm">0</span> WPM</p>
+        <audio id="audioPlayer" controls></audio>
+      </div>
+
+      <p class="warn">The transcript step unlocks automatically once playback finishes. You can replay the audio as many times as you like before continuing.</p>
+      <button class="btn btn-primary" id="btnToTranscribe" disabled>Open Transcript Sheet →</button>
+    </section>
+
+    <div class="perforation hidden" id="perf2" aria-hidden="true"></div>
+
+    <!-- STEP 3 — TRANSCRIPT -->
+    <section class="stub hidden" id="stepTranscribe">
+      <div class="stub-head">
+        <span class="stub-no">03</span>
+        <h2>Transcript</h2>
+      </div>
+
+      <div class="timer-row" id="timerConfig">
+        <label class="field field-inline">
+          <span>Time allowed</span>
+          <select id="timerSelect"></select>
+        </label>
+        <button class="btn btn-ghost" id="btnStartTimer">Start Exam Clock</button>
+      </div>
+
+      <div class="clock hidden" id="liveClock" aria-live="polite">00:00</div>
+
+      <textarea id="transcriptInput" rows="12" disabled placeholder="Start the exam clock to unlock typing..."></textarea>
+
+      <button class="btn btn-primary" id="btnSubmit" disabled>Finalize & Score</button>
+    </section>
+
+    <div class="perforation hidden" id="perf3" aria-hidden="true"></div>
+
+    <!-- STEP 4 — RESULT -->
+    <section class="stub hidden" id="stepResult">
+      <div class="stub-head">
+        <span class="stub-no">04</span>
+        <h2>Result</h2>
+      </div>
+
+      <div class="score-row">
+        <div class="score-card">
+          <span class="score-label">Accuracy</span>
+          <span class="score-value" id="resAccuracy">0.00%</span>
+        </div>
+        <div class="score-card">
+          <span class="score-label">Speed</span>
+          <span class="score-value" id="resSpeed">0 WPM</span>
+        </div>
+      </div>
+
+      <p class="legend"><span class="chip chip-red">red</span> marks missed, added, or mistyped words.</p>
+
+      <div class="compare-grid">
+        <div class="compare-col">
+          <h4>Master transcript</h4>
+          <div class="compare-text" id="panelMaster"></div>
+        </div>
+        <div class="compare-col">
+          <h4>Your transcript</h4>
+          <div class="compare-text" id="panelStudent"></div>
+        </div>
+      </div>
+
+      <button class="btn btn-ghost" id="btnRestart">Start a New Attempt</button>
+    </section>
+
+  </main>
+
+  <footer class="foot">Steno Bench runs entirely in your browser — no data leaves your machine.</footer>
+</div>
+
+<style>
+  :root{
+    --paper:#EDE6D6;
+    --ink:#1B2A4A;
+    --charcoal:#2B2B2B;
+    --brass:#B8925A;
+    --red-pencil:#C1443C;
+    --slate:#3E5C86;
+    --paper-raised:#F6F1E6;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--charcoal);
+    font-family:'IBM Plex Sans', sans-serif;
+    background-image: radial-gradient(circle at 50% 0%, rgba(27,42,74,0.05), transparent 60%);
+  }
+
+  .wrap{ max-width:760px; margin:0 auto; padding:48px 20px 64px; }
+
+  .masthead{ text-align:center; margin-bottom:36px; }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    letter-spacing:.18em; text-transform:uppercase;
+    font-size:12px; color:var(--slate); margin:0 0 6px;
+  }
+  h1{
+    font-family:'Spectral', serif; font-weight:700;
+    font-size:clamp(34px,6vw,52px); color:var(--ink); margin:0;
+  }
+  .tagline{ color:#5b5145; margin:10px 0 0; font-size:15px; }
+
+  .ticket{
+    background:var(--paper-raised);
+    border:1px solid rgba(27,42,74,0.15);
+    border-radius:18px;
+    box-shadow:0 20px 40px -24px rgba(27,42,74,0.35);
+    overflow:hidden;
+  }
+
+  .stub{ padding:32px 34px; position:relative; }
+  .stub.hidden{ display:none; }
+
+  .stub-head{ display:flex; align-items:baseline; gap:14px; margin-bottom:6px; }
+  .stub-no{
+    font-family:'IBM Plex Mono', monospace; font-weight:600;
+    font-size:13px; color:var(--brass); letter-spacing:.1em;
+    border:1px solid var(--brass); border-radius:999px;
+    padding:3px 10px;
+  }
+  .stub-head h2{
+    font-family:'Spectral', serif; font-size:24px; color:var(--ink); margin:0;
+  }
+  .stub-note{ color:#665c4e; font-size:14px; margin:4px 0 22px; }
+
+  /* perforated tear line between sections */
+  .perforation{
+    height:0; border-top:2px dashed rgba(27,42,74,0.25);
+    position:relative; margin:0 34px;
+  }
+  .perforation.hidden{ display:none; }
+  .perforation::before, .perforation::after{
+    content:''; position:absolute; top:-9px; width:18px; height:18px;
+    border-radius:50%; background:var(--paper);
+  }
+  .perforation::before{ left:-43px; }
+  .perforation::after{ right:-43px; }
+
+  .field-row{ display:flex; gap:16px; flex-wrap:wrap; margin-bottom:16px; }
+  .field{ flex:1; min-width:220px; display:flex; flex-direction:column; gap:6px; margin-bottom:16px; }
+  .field-inline{ flex:none; min-width:180px; margin-bottom:0; }
+  .field span{ font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--slate); }
+  input[type=text], input[type=email], select, textarea{
+    font-family:'IBM Plex Sans', sans-serif;
+    border:1.5px solid rgba(27,42,74,0.25);
+    background:#fff;
+    border-radius:10px;
+    padding:11px 13px;
+    font-size:15px;
+    color:var(--charcoal);
+    outline:none;
+  }
+  input:focus, select:focus, textarea:not(:disabled):focus{
+    border-color:var(--slate);
+    box-shadow:0 0 0 3px rgba(62,92,134,0.18);
+  }
+
+  .btn{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-weight:600; font-size:15px;
+    border:none; border-radius:10px;
+    padding:13px 22px; cursor:pointer;
+    transition:transform .12s ease, opacity .12s ease;
+  }
+  .btn:active{ transform:scale(0.98); }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .btn-primary{ background:var(--ink); color:var(--paper-raised); width:100%; }
+  .btn-primary:not(:disabled):hover{ background:#132038; }
+  .btn-ghost{ background:transparent; color:var(--ink); border:1.5px solid var(--brass); }
+  .btn-ghost:not(:disabled):hover{ background:rgba(184,146,90,0.12); }
+
+  .listen-card{
+    background:#fff; border:1px solid rgba(27,42,74,0.15);
+    border-radius:14px; padding:22px; text-align:center; margin-bottom:18px;
+  }
+  .listen-title{ font-family:'Spectral', serif; font-size:20px; color:var(--ink); margin:0 0 2px; font-weight:600; }
+  .listen-wpm{ font-family:'IBM Plex Mono', monospace; color:var(--slate); margin:0 0 16px; }
+  audio{ width:100%; }
+
+  .warn{ font-size:13px; color:var(--red-pencil); margin-bottom:18px; }
+
+  .timer-row{ display:flex; align-items:flex-end; gap:14px; margin-bottom:18px; flex-wrap:wrap; }
+  .clock{
+    font-family:'IBM Plex Mono', monospace; font-size:34px; font-weight:600;
+    color:var(--red-pencil); text-align:center; letter-spacing:.08em;
+    background:#fff; border:1.5px solid rgba(193,68,60,0.3);
+    border-radius:12px; padding:10px; margin-bottom:18px;
+  }
+  .clock.hidden{ display:none; }
+
+  textarea{ width:100%; resize:vertical; line-height:1.6; margin-bottom:18px; }
+  textarea:disabled{ background:#f1ede2; color:#8a8272; }
+
+  .score-row{ display:flex; gap:16px; margin-bottom:16px; flex-wrap:wrap; }
+  .score-card{
+    flex:1; min-width:150px; background:#fff;
+    border:1px solid rgba(27,42,74,0.15); border-radius:14px;
+    padding:16px; text-align:center;
+  }
+  .score-label{ display:block; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--slate); margin-bottom:4px; }
+  .score-value{ font-family:'IBM Plex Mono', monospace; font-size:28px; font-weight:600; color:var(--ink); }
+
+  .legend{ font-size:13px; color:#665c4e; margin-bottom:16px; }
+  .chip{ font-family:'IBM Plex Mono', monospace; font-size:12px; padding:1px 6px; border-radius:5px; }
+  .chip-red{ background:rgba(193,68,60,0.16); color:var(--red-pencil); }
+
+  .compare-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+  @media (max-width:600px){ .compare-grid{ grid-template-columns:1fr; } }
+  .compare-col h4{ font-family:'Spectral', serif; font-size:15px; color:var(--ink); margin:0 0 8px; }
+  .compare-text{
+    background:#fff; border:1px solid rgba(27,42,74,0.15); border-radius:12px;
+    padding:16px; font-family:'IBM Plex Mono', monospace; font-size:13.5px;
+    line-height:1.9; white-space:pre-wrap;
+  }
+  .err{ background:rgba(193,68,60,0.16); color:var(--red-pencil); border-radius:4px; padding:0 3px; }
+  .err-strike{ text-decoration:line-through; }
+
+  .foot{ text-align:center; font-size:12px; color:#8a8272; margin-top:26px; }
+</style>
+
+<script>
+(function(){
+  let selectedDictation = null;
+  let countdownId = null;
+  let totalSeconds = 0;
+  let elapsedSeconds = 0;
+  let timerStarted = false;
+
+  const el = id => document.getElementById(id);
+
+  function init(){
+    // populate dictation dropdown
+    const sel = el('dictationSelect');
+    DICTATIONS.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d.id;
+      opt.textContent = `${d.title} (${d.wpm} WPM)`;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', onDictationChange);
+
+    // populate timer dropdown 5..60 step 5
+    const timerSel = el('timerSelect');
+    for(let m = 5; m <= 60; m += 5){
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = `${m} minutes`;
+      if(m === 15) opt.selected = true;
+      timerSel.appendChild(opt);
+    }
+
+    el('btnToListen').addEventListener('click', goToListen);
+    el('btnToTranscribe').addEventListener('click', goToTranscribe);
+    el('btnStartTimer').addEventListener('click', startClock);
+    el('btnSubmit').addEventListener('click', finalize);
+    el('btnRestart').addEventListener('click', () => location.reload());
+
+    el('candName').addEventListener('input', validateRegister);
+    el('candEmail').addEventListener('input', validateRegister);
+
+    el('transcriptInput').addEventListener('paste', e => e.preventDefault());
+
+    el('audioPlayer').addEventListener('ended', () => {
+      el('btnToTranscribe').disabled = false;
+    });
+  }
+
+  function onDictationChange(){
+    const id = el('dictationSelect').value;
+    selectedDictation = DICTATIONS.find(d => d.id === id) || null;
+    validateRegister();
+  }
+
+  function validateRegister(){
+    const ok = el('candName').value.trim() && el('candEmail').value.trim() && selectedDictation;
+    el('btnToListen').disabled = !ok;
+  }
+
+  function goToListen(){
+    el('listenTitle').textContent = selectedDictation.title;
+    el('listenWpm').textContent = selectedDictation.wpm;
+    el('audioPlayer').src = selectedDictation.audioSrc;
+
+    el('stepRegister').classList.add('hidden');
+    document.querySelector('.perforation').classList.add('hidden');
+    el('stepListen').classList.remove('hidden');
+    el('perf2').classList.remove('hidden');
+  }
+
+  function goToTranscribe(){
+    el('audioPlayer').pause();
+    el('stepListen').classList.add('hidden');
+    el('perf2').classList.add('hidden');
+    el('stepTranscribe').classList.remove('hidden');
+    el('perf3').classList.remove('hidden');
+  }
+
+  function startClock(){
+    if(timerStarted) return;
+    timerStarted = true;
+
+    totalSeconds = parseInt(el('timerSelect').value, 10) * 60;
+    elapsedSeconds = 0;
+
+    el('timerConfig').style.display = 'none';
+    el('liveClock').classList.remove('hidden');
+
+    const ta = el('transcriptInput');
+    ta.disabled = false;
+    ta.focus();
+
+    el('btnSubmit').disabled = false;
+
+    tick();
+    countdownId = setInterval(() => {
+      elapsedSeconds++;
+      tick();
+      if(elapsedSeconds >= totalSeconds){
+        clearInterval(countdownId);
+        finalize();
+      }
+    }, 1000);
+  }
+
+  function tick(){
+    const remaining = Math.max(0, totalSeconds - elapsedSeconds);
+    const m = Math.floor(remaining / 60).toString().padStart(2,'0');
+    const s = (remaining % 60).toString().padStart(2,'0');
+    el('liveClock').textContent = `${m}:${s}`;
+  }
+
+  function cleanSplit(text){
+    return text.toLowerCase()
+      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"'\n]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .split(' ')
+      .filter(Boolean);
+  }
+
+  function finalize(){
+    if(countdownId) clearInterval(countdownId);
+    el('transcriptInput').disabled = true;
+    el('btnSubmit').disabled = true;
+
+    const studentText = el('transcriptInput').value.trim();
+    const masterText = selectedDictation.masterText;
+
+    const sWords = cleanSplit(studentText);
+    const mWords = cleanSplit(masterText);
+    const sOrig = studentText.replace(/\s+/g,' ').trim().split(' ').filter(Boolean);
+    const mOrig = masterText.replace(/\s+/g,' ').trim().split(' ').filter(Boolean);
+
+    const minutesUsed = Math.max(elapsedSeconds / 60, 0.1);
+    const wordCount = sWords.length;
+    const speed = (wordCount / minutesUsed).toFixed(1);
+
+    // Levenshtein alignment
+    const n = sWords.length, m = mWords.length;
+    const dp = Array.from({length:n+1}, () => new Array(m+1).fill(0));
+    for(let i=0;i<=n;i++) dp[i][0]=i;
+    for(let j=0;j<=m;j++) dp[0][j]=j;
+    for(let i=1;i<=n;i++){
+      for(let j=1;j<=m;j++){
+        if(sWords[i-1] === mWords[j-1]) dp[i][j] = dp[i-1][j-1];
+        else dp[i][j] = 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+      }
+    }
+
+    const totalEdits = dp[n][m];
+    let accuracy = m > 0 ? ((m - totalEdits) / m) * 100 : 0;
+    if(accuracy < 0) accuracy = 0;
+    accuracy = accuracy.toFixed(2);
+
+    // backtrack to build highlighted markup
+    let i = n, j = m;
+    const masterParts = [], studentParts = [];
+    while(i > 0 || j > 0){
+      if(i > 0 && j > 0 && sWords[i-1] === mWords[j-1]){
+        masterParts.unshift(escapeHtml(mOrig[j-1]));
+        studentParts.unshift(escapeHtml(sOrig[i-1]));
+        i--; j--;
+      } else if(j > 0 && (i === 0 || (dp[i][j-1] <= dp[i-1][j] && dp[i][j-1] <= dp[i-1][j-1]))){
+        masterParts.unshift(`<span class="err err-strike">${escapeHtml(mOrig[j-1])}</span>`);
+        j--;
+      } else if(i > 0 && (j === 0 || (dp[i-1][j] <= dp[i][j-1] && dp[i-1][j] <= dp[i-1][j-1]))){
+        studentParts.unshift(`<span class="err">${escapeHtml(sOrig[i-1])}</span>`);
+        i--;
+      } else {
+        masterParts.unshift(`<span class="err">${escapeHtml(mOrig[j-1])}</span>`);
+        studentParts.unshift(`<span class="err">${escapeHtml(sOrig[i-1])}</span>`);
+        i--; j--;
+      }
+    }
+
+    el('resAccuracy').textContent = `${accuracy}%`;
+    el('resSpeed').textContent = `${speed} WPM`;
+    el('panelMaster').innerHTML = masterParts.join(' ');
+    el('panelStudent').innerHTML = studentParts.join(' ') || '<em>(nothing typed)</em>';
+
+    el('stepTranscribe').classList.add('hidden');
+    el('perf3').classList.add('hidden');
+    el('stepResult').classList.remove('hidden');
+  }
+
+  function escapeHtml(str){
+    return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+</body>
+</html>
